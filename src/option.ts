@@ -14,7 +14,9 @@ export interface Option {
   description: string;
 }
 
-type DirectionalMap = {[key: string]: number};
+interface DirectionalMap {
+  [key: string]: number;
+}
 
 enum Direction {
   Forward = 1,
@@ -72,9 +74,9 @@ export function processInputForOptions(
   const matches = text.match(DIRECTION_REGEX);
   if (matches) {
     for (const match of matches) {
-      const directions = getDirections(match);
+      const directionals = getDirections(match);
 
-      for (const direction of directions) {
+      for (const direction of directionals) {
         const delta = getDelta(direction);
         const key = axisMap[direction];
 
@@ -87,8 +89,6 @@ export function processInputForOptions(
     // Replace the directionals with a space.
     text = text.replace(DIRECTION_REGEX, ' ');
   }
-
-  console.log(pos);
 
   return {pos, text};
 }

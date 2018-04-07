@@ -39,6 +39,69 @@ class OmniCLI {
     this.processCommands(commands);
   }
 
+  public onTextEntered = (text: string): Error | void => {
+    if (!this.hasPrefix(text)) {
+      return new Error(
+        `the given input does not match the prefix \'${this.prefix}\'`,
+      );
+    }
+
+    const input = this.processInput(text);
+    if (!input.command) {
+      return new Error('no command matched for the given input');
+    }
+
+    const {command: {action}, args} = input;
+
+    return action(args);
+  };
+
+  public onTextChanged = (text: string): Option[] => {
+    if (!this.hasPrefix(text)) {
+      return [];
+    }
+
+    const input = this.processInput(text);
+    let options: Option[] = [];
+    if (input.command) {
+      const {command, args} = input;
+      if (input.command.getOptions) {
+        options = command.getOptions(args).map(({content, ...opt}) => ({
+          content: `${command.name} ${content}`,
+          ...opt,
+        }));
+      } else {
+        options = [this.toOption(command)];
+
+        for (const sub of command.commands) {
+          const subCmd = normalizeCommand({
+            ...sub,
+            name: `${command.name} ${sub.name}`,
+          });
+          options.push(this.toOption(subCmd));
+        }
+      }
+    } else {
+      options = [
+        {
+          content: '',
+          description: 'Enter a command',
+        },
+      ];
+
+      for (const command of this.commands.values()) {
+        options.push({
+          content: this.toCommand(command),
+          description: `${command.name}${
+            command.description ? ` - ${command.description}` : ''
+          }`,
+        });
+      }
+    }
+
+    return processOptions(options, input.pos);
+  };
+
   private processCommands(commands: Command[], pre: string = ''): void {
     for (const cmd of commands) {
       const command = normalizeCommand(cmd);
@@ -130,69 +193,6 @@ class OmniCLI {
   private handleEntered({command, args}: Input): void {
     command.action(args);
   }
-
-  public onTextEntered = (text: string): Error | void => {
-    if (!this.hasPrefix(text)) {
-      return new Error(
-        `the given input does not match the prefix \'${this.prefix}\'`,
-      );
-    }
-
-    const input = this.processInput(text);
-    if (!input.command) {
-      return new Error('no command matched for the given input');
-    }
-
-    const {command: {action}, args} = input;
-
-    return action(args);
-  };
-
-  public onTextChanged = (text: string): Option[] => {
-    if (!this.hasPrefix(text)) {
-      return [];
-    }
-
-    const input = this.processInput(text);
-    let options: Option[] = [];
-    if (input.command) {
-      const {command, args} = input;
-      if (input.command.getOptions) {
-        options = command.getOptions(args).map(({content, ...opt}) => ({
-          content: `${command.name} ${content}`,
-          ...opt,
-        }));
-      } else {
-        options = [this.toOption(command)];
-
-        for (const sub of command.commands) {
-          const subCmd = normalizeCommand({
-            ...sub,
-            name: `${command.name} ${sub.name}`,
-          });
-          options.push(this.toOption(subCmd));
-        }
-      }
-    } else {
-      options = [
-        {
-          content: '',
-          description: 'Enter a command',
-        },
-      ];
-
-      for (const command of this.commands.values()) {
-        options.push({
-          content: this.toCommand(command),
-          description: `${command.name}${
-            command.description ? ` - ${command.description}` : ''
-          }`,
-        });
-      }
-    }
-
-    return processOptions(options, input.pos);
-  };
 }
 
 export function createCli(options: Partial<Options>): OmniCLI {

@@ -1,3 +1,4 @@
+// tslint:disable:no-console
 import createCli, {Command, Option} from '../src';
 
 function helloAction(args: string[]): null {

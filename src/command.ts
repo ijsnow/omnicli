@@ -22,7 +22,9 @@ export interface NormalizedCommand extends Command {
   depth: number;
 }
 
-const noop = () => {};
+const noop = () => {
+  // noop
+};
 
 function findCommandDepth(command: Command): number {
   let depth = 1;

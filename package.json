@@ -8,9 +8,10 @@
     "start": "./scripts/start.sh",
     "start:firefox": "web-ext run -s ./dist/omnitest",
     "watch": "node ./scripts/watch.js",
-    "bundle": "./scripts/bundle.sh",
+    "publish": "./scripts/publish.sh",
     "build:dev": "NODE_ENV=development webpack --watch --mode=development",
     "build:prod": "NODE_ENV=production webpack --mode=production",
+    "lint": "tslint -c tslint.json -p .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
@@ -21,6 +22,7 @@
     "prettier": "1.11.1",
     "ts-loader": "^4.1.0",
     "tslint": "^5.9.1",
+    "tslint-config-prettier": "^1.10.0",
     "typescript": "^2.8.1",
     "web-ext": "^2.6.0",
     "webpack": "^4.5.0",
