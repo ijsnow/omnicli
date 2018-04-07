@@ -1,0 +1,14 @@
+{
+  "description": "For testing OmniCLI purposes",
+  "manifest_version": 2,
+  "name": "OmniTest",
+  "version": "0.0.1",
+  "homepage_url": "https://github.com/ijsnow/omnicli",
+  "permissions": ["<all_urls>"],
+  "background": {
+    "scripts": ["omnitest.bundle.js"]
+  },
+  "omnibox": {
+    "keyword": "ot"
+  }
+}
