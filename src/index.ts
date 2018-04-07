@@ -1,3 +1,3 @@
-export {createCli as default} from './omnicli';
-export {Command} from './command';
-export {Option} from './option';
+export { createCli } from './omnicli';
+export { Command } from './command';
+export { Suggestion } from './suggestion';

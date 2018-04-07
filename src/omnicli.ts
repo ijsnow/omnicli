@@ -5,15 +5,15 @@ import trimStart = require('lodash/trimStart');
 import {Command, normalizeCommand, NormalizedCommand} from './command';
 import {
   MenuPos,
-  Option,
-  processInputForOptions,
-  processOptions,
-} from './option';
+  processInputForSuggestions,
+  processSuggestions,
+  Suggestion,
+} from './suggestion';
 
 const DELIMETER = ' ';
 const WHITESPACE = /\s+/;
 
-export interface Options {
+export interface Suggestions {
   commands: Command[];
   prefix: string;
 }
@@ -25,16 +25,18 @@ interface Input {
 }
 
 export interface CLI {
-  onTextChanged: (text: string) => Promise<Option[]>;
+  onTextChanged: (text: string) => Promise<Suggestion[]>;
   onTextEntered: (text: string) => void | Error;
+  defaultSuggestion: string;
 }
 
 class OmniCLI implements CLI {
+  public defaultSuggestion = '';
+
   private prefix = '';
   private commands = new Map<string, NormalizedCommand>();
-  private defaultOption = '';
 
-  constructor({commands, prefix}: Options) {
+  constructor({commands, prefix}: Suggestions) {
     this.prefix = prefix;
 
     this.processCommands(commands);
@@ -57,20 +59,20 @@ class OmniCLI implements CLI {
     return action(args);
   };
 
-  public onTextChanged = (text: string): Promise<Option[]> => {
+  public onTextChanged = (text: string): Promise<Suggestion[]> => {
     return new Promise(resolve => {
       if (!this.hasPrefix(text)) {
         resolve([]);
       }
 
       const input = this.processInput(text);
-      let options: Option[] = [];
+      let suggestions: Suggestion[] = [];
       if (input.command) {
         const {command, args} = input;
-        if (command.getOptions) {
-          command.getOptions(args).then(opts => {
+        if (command.getSuggestions) {
+          command.getSuggestions(args).then(opts => {
             resolve(
-              processOptions(
+              processSuggestions(
                 opts.map(({content, ...opt}) => ({
                   content: `${command.name} ${content}`,
                   ...opt,
@@ -81,18 +83,18 @@ class OmniCLI implements CLI {
           });
           return;
         } else {
-          options = [this.toOption(command)];
+          suggestions = [this.toSuggestion(command)];
 
           for (const sub of command.commands) {
             const subCmd = normalizeCommand({
               ...sub,
               name: `${command.name} ${sub.name}`,
             });
-            options.push(this.toOption(subCmd));
+            suggestions.push(this.toSuggestion(subCmd));
           }
         }
       } else {
-        options = [
+        suggestions = [
           {
             content: '',
             description: 'Enter a command',
@@ -100,7 +102,7 @@ class OmniCLI implements CLI {
         ];
 
         for (const command of this.commands.values()) {
-          options.push({
+          suggestions.push({
             content: this.toCommand(command),
             description: `${command.name}${
               command.description ? ` - ${command.description}` : ''
@@ -109,7 +111,7 @@ class OmniCLI implements CLI {
         }
       }
 
-      resolve(processOptions(options, input.pos));
+      resolve(processSuggestions(suggestions, input.pos));
     });
   };
 
@@ -129,10 +131,14 @@ class OmniCLI implements CLI {
         this.processCommands(command.commands, key);
       }
     }
+
+    this.defaultSuggestion = `Enter a command: ${commands
+      .map(({name}) => name)
+      .join(', ')}`;
   }
 
   private processInput(raw: string): Input {
-    const {text, pos} = processInputForOptions(raw);
+    const {text, pos} = processInputForSuggestions(raw);
 
     const [root, ...args] = trimStart(text, this.prefix)
       .trim()
@@ -192,7 +198,10 @@ class OmniCLI implements CLI {
     return `${this.toCommand(command)} ${args.join(DELIMETER)}`;
   }
 
-  private toOption(command: NormalizedCommand, args: string[] = []): Option {
+  private toSuggestion(
+    command: NormalizedCommand,
+    args: string[] = [],
+  ): Suggestion {
     return {
       content: this.toCommand(command),
       description: `${command.name}${
@@ -206,10 +215,10 @@ class OmniCLI implements CLI {
   }
 }
 
-export function createCli(options: Partial<Options>): CLI {
-  const {commands, ...rest} = options;
+export function createCli(suggestions: Partial<Suggestions>): CLI {
+  const {commands, ...rest} = suggestions;
   if (!commands) {
-    throw new Error('options.commands is required');
+    throw new Error('suggestions.commands is required');
   }
 
   return new OmniCLI({

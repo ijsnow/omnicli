@@ -1,4 +1,4 @@
-import {Option} from './option';
+import { Suggestion } from './suggestion';
 
 export interface Command {
   name: string;
@@ -11,16 +11,16 @@ export interface Command {
   action?: (args: string[]) => Error | void;
   commands?: Command[];
   /**
-   * getOptions gets called when text changed
+   * getSuggestions gets called when text changed
    */
-  getOptions?: (args: string[]) => Promise<Option[]> | Option[];
+  getSuggestions?: (args: string[]) => Promise<Suggestion[]> | Suggestion[];
 }
 
 export interface NormalizedCommand extends Command {
   action: (args: string[]) => void;
   commands: Command[];
   depth: number;
-  getOptions?: (args: string[]) => Promise<Option[]>;
+  getSuggestions?: (args: string[]) => Promise<Suggestion[]>;
 }
 
 const noop = () => {
@@ -39,22 +39,22 @@ function findCommandDepth(command: Command): number {
   return depth;
 }
 
-function wrapGetOptions(
-  fn: (args: string[]) => Promise<Option[]> | Option[],
-): (args: string[]) => Promise<Option[]> {
-  return (args: string[]): Promise<Option[]> => {
-    const gettingOptions = fn(args);
+function wrapGetSuggestions(
+  fn: (args: string[]) => Promise<Suggestion[]> | Suggestion[],
+): (args: string[]) => Promise<Suggestion[]> {
+  return (args: string[]): Promise<Suggestion[]> => {
+    const gettingSuggestions = fn(args);
 
-    if (gettingOptions instanceof Promise) {
-      return gettingOptions;
+    if (gettingSuggestions instanceof Promise) {
+      return gettingSuggestions;
     }
 
-    return Promise.resolve(gettingOptions);
+    return Promise.resolve(gettingSuggestions);
   };
 }
 
 export function normalizeCommand(command: Command): NormalizedCommand {
-  const {getOptions, ...rest} = command;
+  const { getSuggestions, ...rest } = command;
 
   const nCommand: NormalizedCommand = {
     ...rest,
@@ -63,8 +63,8 @@ export function normalizeCommand(command: Command): NormalizedCommand {
     depth: findCommandDepth(command),
   };
 
-  if (getOptions) {
-    nCommand.getOptions = wrapGetOptions(getOptions);
+  if (getSuggestions) {
+    nCommand.getSuggestions = wrapGetSuggestions(getSuggestions);
   }
 
   return nCommand;

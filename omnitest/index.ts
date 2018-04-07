@@ -1,5 +1,5 @@
 // tslint:disable:no-console
-import createCli, {Command, Option} from '../src';
+import { Command, createCli, Suggestion } from '../src';
 
 function helloAction(args: string[]): null {
   console.log(`Hello, ${args.join()}!`);
@@ -7,7 +7,7 @@ function helloAction(args: string[]): null {
   return null;
 }
 
-function getHelloOptions(args: string[]): Option[] {
+function getHelloSuggestions(args: string[]): Suggestion[] {
   return ['Alice', 'Bob'].map(name => ({
     content: name,
     description: `Say hello to ${name}`,
@@ -18,7 +18,7 @@ const helloCommand: Command = {
   name: 'hello',
   alias: ['h'],
   action: helloAction,
-  getOptions: getHelloOptions,
+  getSuggestions: getHelloSuggestions,
 };
 
 function sayAction(args: string[]): null {
@@ -49,21 +49,21 @@ function listAction(args: string[]): void {
   console.log(`you chose: ${args.join(' ')}`);
 }
 
-function getListOptions(args: string[]): Promise<Option[]> {
+function getListSuggestions(args: string[]): Promise<Suggestion[]> {
   return new Promise(resolve => {
-    console.log('getting options');
-    const options: Option[] = [];
+    console.log('getting suggestions');
+    const suggestions: Suggestion[] = [];
 
     for (let i = 0; i < 30; i++) {
-      options.push({
+      suggestions.push({
         content: `item-${i}`,
         description: `Pick item ${i}`,
       });
     }
 
-    console.log('options', options);
+    console.log('suggestions', suggestions);
 
-    resolve(options);
+    resolve(suggestions);
   });
 }
 
@@ -71,12 +71,14 @@ const listCommand: Command = {
   name: 'list',
   alias: ['ls'],
   action: listAction,
-  getOptions: getListOptions,
+  getSuggestions: getListSuggestions,
 };
 
 const commands: Command[] = [humanCommand, listCommand];
 
-const cli = createCli({commands});
+const cli = createCli({ commands });
+
+browser.omnibox.setDefaultSuggestion({ description: cli.defaultSuggestion });
 
 browser.omnibox.onInputChanged.addListener((text, suggest) =>
   cli.onTextChanged(text).then(opts => {

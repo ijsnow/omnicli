@@ -1,9 +1,9 @@
 import trim = require('lodash/trim');
 /**
- * Option represents the objects in a cli suggestion list.
+ * Suggestion represents the objects in a cli suggestion list.
  * This interface implements [`browser.omnibox.SuggestResult`](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/omnibox/SuggestResult).
  */
-export interface Option {
+export interface Suggestion {
   /**
    * content is the value that will be displayed when this item is selected.
    */
@@ -35,7 +35,7 @@ const directions: DirectionalMap = {
   down: Direction.Forward,
 };
 
-const axisMap: {[key: string]: 'x' | 'y'} = {
+const axisMap: { [key: string]: 'x' | 'y' } = {
   h: 'x',
   j: 'y',
   k: 'y',
@@ -52,7 +52,7 @@ const directionMap: DirectionalMap = {
   k: directions.up,
   l: directions.right,
 
-  // Common vim option traversing
+  // Common vim suggestion traversing
   n: directions.down,
   p: directions.up,
 };
@@ -62,9 +62,9 @@ const DIRECTION_REGEX = /\[[A-Za-z]+\]?/gi;
 const getDirections = (raw: string) => trim(raw, '[|]');
 const getDelta = (char: string) => directionMap[char] || 0;
 
-export function processInputForOptions(
+export function processInputForSuggestions(
   raw: string,
-): {pos: MenuPos; text: string} {
+): { pos: MenuPos; text: string } {
   const pos: MenuPos = {
     x: 0,
     y: 0,
@@ -90,16 +90,16 @@ export function processInputForOptions(
     text = text.replace(DIRECTION_REGEX, ' ');
   }
 
-  return {pos, text};
+  return { pos, text };
 }
 
-export function processOptions(options: Option[], pos: MenuPos): Option[] {
-  const yPos = pos.y % options.length;
+export function processSuggestions(suggestions: Suggestion[], pos: MenuPos): Suggestion[] {
+  const yPos = pos.y % suggestions.length;
 
-  const front = options.slice(0, yPos);
-  const back = options.slice(yPos, options.length);
+  const front = suggestions.slice(0, yPos);
+  const back = suggestions.slice(yPos, suggestions.length);
 
-  options = [...back, ...front];
+  suggestions = [...back, ...front];
 
-  return options;
+  return suggestions;
 }

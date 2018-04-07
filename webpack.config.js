@@ -33,6 +33,8 @@ const config = {
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
+    library: ['omnicli', '[name]'],
+    libraryTarget: 'umd',
   },
   plugins: [
     new CheckerPlugin(),

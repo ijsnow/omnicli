@@ -9,16 +9,16 @@ A command line framework designed to work within the [`omnibox`](https://develop
 OmniCLI parses an input and maps it to a given command. Commands can have aliases and
 sub commands.
 
-### Options
+### Suggestions
 
-OmniCLI will build a list of options for you based on the available commands and return
-these as an options menu. You can also provide options for commands when a command
+OmniCLI will build a list of suggestions for you based on the available commands and return
+these as an suggestions menu. You can also provide suggestions for commands when a command
 is matched with an input before it is submitted.
 
-### Vim-like Options Menu Navigation
+### Vim-like Suggestions Menu Navigation
 
 The `omnibox` API only displays the first 6 items passed to it's `suggest` function.
-Because of this, we need a way to simulate scrolling through a list of options.
+Because of this, we need a way to simulate scrolling through a list of suggestions.
 
 To scroll up and down in the list, type `[` any where in the prompt to enter "scroll mode"
 and then use `j` to scroll down and use `k` to scroll up. To exit "scroll mode",
@@ -70,12 +70,12 @@ browser.omnibox.onInputChanged.addListener((text, suggest) =>
 browser.omnibox.onInputEntered.addListener(cli.onTextEntered);
 ```
 
-Options
+Suggestions
 
 ```javascript
 // ...
 
-function getHelloOptions(args: string[]) {
+function getHelloSuggestions(args: string[]) {
   return ['Alice', 'Bob'];
 }
 
@@ -83,37 +83,37 @@ const helloCommand = {
   name: 'hello',
   description: 'Say hello',
   action: helloAction,
-  getOptions: getHelloOptions,
+  getSuggestions: getHelloSuggestions,
 };
 
-options = cli.onTextChanged('hello beautiful world');
+suggestions = cli.onTextChanged('hello beautiful world');
 
-// Display options
-console.log(options);
+// Display suggestions
+console.log(suggestions);
 ```
 
-Scrolling in the list of options.
+Scrolling in the list of suggestions.
 
 ```javascript
-function getHelloOptions(args: string[]) {
+function getHelloSuggestions(args: string[]) {
   return [
-    'Option 0',
-    'Option 1',
-    'Option 2',
-    'Option 3',
-    'Option 4',
-    'Option 5',
-    'Option 6',
-    'Option 7',
-    'Option 8',
-    'Option 9',
+    'Suggestion 0',
+    'Suggestion 1',
+    'Suggestion 2',
+    'Suggestion 3',
+    'Suggestion 4',
+    'Suggestion 5',
+    'Suggestion 6',
+    'Suggestion 7',
+    'Suggestion 8',
+    'Suggestion 9',
   ];
 }
 
-options = cli.onTextChanged('hello[jjjk]');
+suggestions = cli.onTextChanged('hello[jjjk]');
 
 // 'jjj' down 3, 'k' up 1
-// 'Option 2' will be first
+// 'Suggestion 2' will be first
 ```
 
 Sub commands
