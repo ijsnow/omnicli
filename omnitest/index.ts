@@ -49,15 +49,22 @@ function listAction(args: string[]): void {
   console.log(`you chose: ${args.join(' ')}`);
 }
 
-function getListOptions(): Option[] {
-  const options: Option[] = [];
-  for (let i = 0; i < 30; i++) {
-    options.push({
-      content: `item-${i}`,
-      description: `Pick item ${i}`,
-    });
-  }
-  return options;
+function getListOptions(args: string[]): Promise<Option[]> {
+  return new Promise(resolve => {
+    console.log('getting options');
+    const options: Option[] = [];
+
+    for (let i = 0; i < 30; i++) {
+      options.push({
+        content: `item-${i}`,
+        description: `Pick item ${i}`,
+      });
+    }
+
+    console.log('options', options);
+
+    resolve(options);
+  });
 }
 
 const listCommand: Command = {
@@ -72,7 +79,10 @@ const commands: Command[] = [humanCommand, listCommand];
 const cli = createCli({commands});
 
 browser.omnibox.onInputChanged.addListener((text, suggest) =>
-  suggest(cli.onTextChanged(text)),
+  cli.onTextChanged(text).then(opts => {
+    console.log('hello', opts);
+    suggest(opts);
+  }),
 );
 
 browser.omnibox.onInputEntered.addListener(cli.onTextEntered);

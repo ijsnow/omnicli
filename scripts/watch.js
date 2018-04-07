@@ -12,12 +12,8 @@ fs.watchFile('./omnitest/manifest.json', function() {
   );
 });
 
-fs.watchFile('./dist/omnitest.bundle.js', function() {
-  fs.copyFile(
-    './dist/omnitest.bundle.js',
-    './dist/omnitest/omnitest.bundle.js',
-    function() {
-      console.log('\nUpdated omnitest\n');
-    },
-  );
+fs.watchFile('./dist/omnitest.js', function() {
+  fs.copyFile('./dist/omnitest.js', './dist/omnitest/omnitest.js', function() {
+    console.log('\nUpdated omnitest\n');
+  });
 });

@@ -25,7 +25,7 @@ interface Input {
 }
 
 export interface CLI {
-  onTextChanged: (text: string) => Option[];
+  onTextChanged: (text: string) => Promise<Option[]>;
   onTextEntered: (text: string) => void | Error;
 }
 
@@ -57,50 +57,60 @@ class OmniCLI implements CLI {
     return action(args);
   };
 
-  public onTextChanged = (text: string): Option[] => {
-    if (!this.hasPrefix(text)) {
-      return [];
-    }
+  public onTextChanged = (text: string): Promise<Option[]> => {
+    return new Promise(resolve => {
+      if (!this.hasPrefix(text)) {
+        resolve([]);
+      }
 
-    const input = this.processInput(text);
-    let options: Option[] = [];
-    if (input.command) {
-      const {command, args} = input;
-      if (input.command.getOptions) {
-        options = command.getOptions(args).map(({content, ...opt}) => ({
-          content: `${command.name} ${content}`,
-          ...opt,
-        }));
-      } else {
-        options = [this.toOption(command)];
-
-        for (const sub of command.commands) {
-          const subCmd = normalizeCommand({
-            ...sub,
-            name: `${command.name} ${sub.name}`,
+      const input = this.processInput(text);
+      let options: Option[] = [];
+      if (input.command) {
+        const {command, args} = input;
+        if (command.getOptions) {
+          command.getOptions(args).then(opts => {
+            resolve(
+              processOptions(
+                opts.map(({content, ...opt}) => ({
+                  content: `${command.name} ${content}`,
+                  ...opt,
+                })),
+                input.pos,
+              ),
+            );
           });
-          options.push(this.toOption(subCmd));
+          return;
+        } else {
+          options = [this.toOption(command)];
+
+          for (const sub of command.commands) {
+            const subCmd = normalizeCommand({
+              ...sub,
+              name: `${command.name} ${sub.name}`,
+            });
+            options.push(this.toOption(subCmd));
+          }
+        }
+      } else {
+        options = [
+          {
+            content: '',
+            description: 'Enter a command',
+          },
+        ];
+
+        for (const command of this.commands.values()) {
+          options.push({
+            content: this.toCommand(command),
+            description: `${command.name}${
+              command.description ? ` - ${command.description}` : ''
+            }`,
+          });
         }
       }
-    } else {
-      options = [
-        {
-          content: '',
-          description: 'Enter a command',
-        },
-      ];
 
-      for (const command of this.commands.values()) {
-        options.push({
-          content: this.toCommand(command),
-          description: `${command.name}${
-            command.description ? ` - ${command.description}` : ''
-          }`,
-        });
-      }
-    }
-
-    return processOptions(options, input.pos);
+      resolve(processOptions(options, input.pos));
+    });
   };
 
   private processCommands(commands: Command[], pre: string = ''): void {

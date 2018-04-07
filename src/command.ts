@@ -13,13 +13,14 @@ export interface Command {
   /**
    * getOptions gets called when text changed
    */
-  getOptions?: (args: string[]) => Option[];
+  getOptions?: (args: string[]) => Promise<Option[]> | Option[];
 }
 
 export interface NormalizedCommand extends Command {
   action: (args: string[]) => void;
   commands: Command[];
   depth: number;
+  getOptions?: (args: string[]) => Promise<Option[]>;
 }
 
 const noop = () => {
@@ -38,11 +39,33 @@ function findCommandDepth(command: Command): number {
   return depth;
 }
 
+function wrapGetOptions(
+  fn: (args: string[]) => Promise<Option[]> | Option[],
+): (args: string[]) => Promise<Option[]> {
+  return (args: string[]): Promise<Option[]> => {
+    const gettingOptions = fn(args);
+
+    if (gettingOptions instanceof Promise) {
+      return gettingOptions;
+    }
+
+    return Promise.resolve(gettingOptions);
+  };
+}
+
 export function normalizeCommand(command: Command): NormalizedCommand {
-  return {
-    ...command,
+  const {getOptions, ...rest} = command;
+
+  const nCommand: NormalizedCommand = {
+    ...rest,
     action: command.action || noop,
     commands: command.commands || [],
     depth: findCommandDepth(command),
   };
+
+  if (getOptions) {
+    nCommand.getOptions = wrapGetOptions(getOptions);
+  }
+
+  return nCommand;
 }

@@ -6,7 +6,7 @@
   "homepage_url": "https://github.com/ijsnow/omnicli",
   "permissions": ["<all_urls>"],
   "background": {
-    "scripts": ["omnitest.bundle.js"]
+    "scripts": ["omnitest.js"]
   },
   "omnibox": {
     "keyword": "ot"
