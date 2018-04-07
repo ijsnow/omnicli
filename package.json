@@ -1,6 +1,6 @@
 {
   "name": "omnicli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CLI framework designed for use in the browser",
   "license": "MIT",
   "main": "dist/omnicli.js",
@@ -24,8 +24,10 @@
     "declaration-bundler-webpack-plugin": "^1.0.3",
     "prettier": "1.11.1",
     "ts-loader": "^4.1.0",
+    "ts-loader-decleration": "^0.10.4",
     "tslint": "^5.9.1",
     "tslint-config-prettier": "^1.10.0",
+    "tslint-loader": "^3.6.0",
     "typescript": "^2.8.1",
     "web-ext": "^2.6.0",
     "webpack": "^4.5.0",
