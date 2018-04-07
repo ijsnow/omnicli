@@ -24,11 +24,12 @@ interface Input {
   pos: MenuPos;
 }
 
-/**
- * Maybe construct "sub" OmniCLIs for each command with `commands`.
- * Consider storing those in the commands Map.
- */
-export class OmniCLI {
+export interface CLI {
+  onTextChanged: (text: string) => Option[];
+  onTextEntered: (text: string) => void | Error;
+}
+
+class OmniCLI implements CLI {
   private prefix = '';
   private commands = new Map<string, NormalizedCommand>();
   private defaultOption = '';
@@ -195,7 +196,7 @@ export class OmniCLI {
   }
 }
 
-export function createCli(options: Partial<Options>): OmniCLI {
+export function createCli(options: Partial<Options>): CLI {
   const {commands, ...rest} = options;
   if (!commands) {
     throw new Error('options.commands is required');

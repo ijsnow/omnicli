@@ -1,10 +1,10 @@
 {
   "name": "omnicli",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "CLI framework designed for use in the browser",
   "license": "MIT",
   "main": "dist/omnicli.js",
-  "types": "dist/src",
+  "types": "dist/omnicli.d.ts",
   "scripts": {
     "start": "./scripts/start.sh",
     "start:firefox": "web-ext run -s ./dist/omnitest",
