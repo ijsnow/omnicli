@@ -1,6 +1,6 @@
 {
   "name": "omnicli",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "CLI framework designed for use in the browser",
   "license": "MIT",
   "main": "dist/omnicli.js",
@@ -9,7 +9,7 @@
     "start": "./scripts/start.sh",
     "start:firefox": "web-ext run -s ./dist/omnitest",
     "watch": "node ./scripts/watch.js",
-    "prepack": "./scripts/bundle.sh",
+    "prepublishOnly": "./scripts/bundle.sh",
     "build:dev": "NODE_ENV=development webpack --watch --mode=development",
     "build:prod": "NODE_ENV=production webpack --mode=production",
     "lint": "tslint -c tslint.json -p .",
