@@ -28,7 +28,7 @@ interface Input {
  * Maybe construct "sub" OmniCLIs for each command with `commands`.
  * Consider storing those in the commands Map.
  */
-class OmniCLI {
+export class OmniCLI {
   private prefix = '';
   private commands = new Map<string, NormalizedCommand>();
   private defaultOption = '';

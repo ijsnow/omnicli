@@ -6,6 +6,7 @@
     "module": "commonjs",
     "target": "es6",
     "lib": ["es2017", "dom", "dom.iterable", "es2017.object"],
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "declaration": true
   }
 }

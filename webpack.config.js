@@ -1,4 +1,5 @@
 const path = require('path');
+const {CheckerPlugin} = require('awesome-typescript-loader');
 
 const entry = {
   omnicli: './src/index.ts',
@@ -8,14 +9,13 @@ if (process.env.NODE_ENV === 'development') {
   entry.omnitest = './omnitest/index.ts';
 }
 
-module.exports = {
+const config = {
   entry,
-  devtool: 'inline-source-map',
   module: {
     rules: [
       {
         test: /\.ts$/,
-        use: 'ts-loader',
+        use: 'awesome-typescript-loader',
         exclude: /node_modules/,
       },
     ],
@@ -24,7 +24,14 @@ module.exports = {
     extensions: ['.ts', '.js'],
   },
   output: {
-    filename: '[name].bundle.js',
+    filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
   },
+  plugins: [new CheckerPlugin()],
 };
+
+if (process.env.NODE_ENV === 'development') {
+  config.devtool = 'inline-source-map';
+}
+
+module.exports = config;
