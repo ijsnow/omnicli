@@ -37,13 +37,13 @@ npm i omnicli
 Basic usage
 
 ```javascript
-import createCli from 'omnicli';
+import {createCli, Command} from 'omnicli';
 
-function helloAction(args: string[]) {
+function helloAction(args: string[]): void {
   console.log(`Hello, ${args.join(' ')}!`);
 }
 
-const helloCommand = {
+const helloCommand: Command = {
   name: 'hello',
   alias: ['greet'],
   description: 'Say hello',
@@ -55,16 +55,16 @@ const cli = createCli({
 });
 
 cli.onTextEntered('hello beautiful world');
-// => 'Hello, beautiful world!'
+// => 'Hello, beautiful world!' will be logged
 cli.onTextEntered('greet beautiful world');
-// => 'Hello, beautiful world!'
+// => 'Hello, beautiful world!' will be logged
 ```
 
 With `omnibox`
 
 ```javascript
 browser.omnibox.onInputChanged.addListener((text, suggest) =>
-  suggest(cli.onTextChanged(text)),
+  cli.onTextChanged(text).then(suggestions => suggest(suggestions)),
 );
 
 browser.omnibox.onInputEntered.addListener(cli.onTextEntered);
@@ -86,10 +86,9 @@ const helloCommand = {
   getSuggestions: getHelloSuggestions,
 };
 
-suggestions = cli.onTextChanged('hello beautiful world');
-
-// Display suggestions
-console.log(suggestions);
+cli
+  .onTextChanged('hello beautiful world')
+  .then(suggestions => console.log(suggestions));
 ```
 
 Scrolling in the list of suggestions.
@@ -110,7 +109,7 @@ function getHelloSuggestions(args: string[]) {
   ];
 }
 
-suggestions = cli.onTextChanged('hello[jjjk]');
+cli.onTextChanged('hello[jjjk]').then(suggestions => console.log(suggestions));
 
 // 'jjj' down 3, 'k' up 1
 // 'Suggestion 2' will be first
