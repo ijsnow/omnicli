@@ -37,26 +37,26 @@ npm i omnicli
 Basic usage
 
 ```javascript
-import {createCli, Command} from 'omnicli';
+import { createCli, Command } from "omnicli";
 
 function helloAction(args: string[]): void {
-  console.log(`Hello, ${args.join(' ')}!`);
+  console.log(`Hello, ${args.join(" ")}!`);
 }
 
 const helloCommand: Command = {
-  name: 'hello',
-  alias: ['greet'],
-  description: 'Say hello',
-  action: helloAction,
+  name: "hello",
+  alias: ["greet"],
+  description: "Say hello",
+  action: helloAction
 };
 
 const cli = createCli({
-  commands: [helloCommand],
+  commands: [helloCommand]
 });
 
-cli.onTextEntered('hello beautiful world');
+cli.onInputEntered("hello beautiful world");
 // => 'Hello, beautiful world!' will be logged
-cli.onTextEntered('greet beautiful world');
+cli.onInputEntered("greet beautiful world");
 // => 'Hello, beautiful world!' will be logged
 ```
 
@@ -64,10 +64,10 @@ With `omnibox`
 
 ```javascript
 browser.omnibox.onInputChanged.addListener((text, suggest) =>
-  cli.onTextChanged(text).then(suggestions => suggest(suggestions)),
+  cli.onInputChanged(text).then(suggestions => suggest(suggestions))
 );
 
-browser.omnibox.onInputEntered.addListener(cli.onTextEntered);
+browser.omnibox.onInputEntered.addListener(cli.onInputEntered);
 ```
 
 Suggestions
@@ -76,18 +76,18 @@ Suggestions
 // ...
 
 function getHelloSuggestions(args: string[]) {
-  return ['Alice', 'Bob'];
+  return ["Alice", "Bob"];
 }
 
 const helloCommand = {
-  name: 'hello',
-  description: 'Say hello',
+  name: "hello",
+  description: "Say hello",
   action: helloAction,
-  getSuggestions: getHelloSuggestions,
+  getSuggestions: getHelloSuggestions
 };
 
 cli
-  .onTextChanged('hello beautiful world')
+  .onInputChanged("hello beautiful world")
   .then(suggestions => console.log(suggestions));
 ```
 
@@ -96,20 +96,20 @@ Scrolling in the list of suggestions.
 ```javascript
 function getHelloSuggestions(args: string[]) {
   return [
-    'Suggestion 0',
-    'Suggestion 1',
-    'Suggestion 2',
-    'Suggestion 3',
-    'Suggestion 4',
-    'Suggestion 5',
-    'Suggestion 6',
-    'Suggestion 7',
-    'Suggestion 8',
-    'Suggestion 9',
+    "Suggestion 0",
+    "Suggestion 1",
+    "Suggestion 2",
+    "Suggestion 3",
+    "Suggestion 4",
+    "Suggestion 5",
+    "Suggestion 6",
+    "Suggestion 7",
+    "Suggestion 8",
+    "Suggestion 9"
   ];
 }
 
-cli.onTextChanged('hello[jjjk]').then(suggestions => console.log(suggestions));
+cli.onInputChanged("hello[jjjk]").then(suggestions => console.log(suggestions));
 
 // 'jjj' down 3, 'k' up 1
 // 'Suggestion 2' will be first
@@ -119,33 +119,33 @@ Sub commands
 
 ```javascript
 function helloAction(args: string[]) {
-  console.log(`Hello, ${args.join(' ')}!`);
+  console.log(`Hello, ${args.join(" ")}!`);
 }
 
 const helloCommand = {
-  name: 'hello',
-  description: 'Say hello',
-  action: helloAction,
+  name: "hello",
+  description: "Say hello",
+  action: helloAction
 };
 
 function sayAction(args: string[]) {
-  console.log(`I say '${args.join(' ')}'!`);
+  console.log(`I say '${args.join(" ")}'!`);
 }
 
 const sayCommand = {
-  name: 'say',
-  description: 'Say something',
+  name: "say",
+  description: "Say something",
   action: sayAction,
-  commands: [helloCommand],
+  commands: [helloCommand]
 };
 
 const cli = createCli({
-  commands: [helloCommand],
+  commands: [helloCommand]
 });
 
-cli.onTextEntered('say Oi');
+cli.onInputEntered("say Oi");
 // => 'I say 'Oi'!'
 
-cli.onTextEntered('say hello beautiful world');
+cli.onInputEntered("say hello beautiful world");
 // => 'Hello, beautiful world!'
 ```
