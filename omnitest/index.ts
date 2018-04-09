@@ -81,10 +81,9 @@ const cli = createCli({ commands });
 browser.omnibox.setDefaultSuggestion({ description: cli.defaultSuggestion });
 
 browser.omnibox.onInputChanged.addListener((text, suggest) =>
-  cli.onTextChanged(text).then(opts => {
-    console.log('hello', opts);
+  cli.onInputChanged(text).then(opts => {
     suggest(opts);
   }),
 );
 
-browser.omnibox.onInputEntered.addListener(cli.onTextEntered);
+browser.omnibox.onInputEntered.addListener(cli.onInputEntered);

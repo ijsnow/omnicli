@@ -2,7 +2,7 @@ import tail = require('lodash/tail');
 import take = require('lodash/take');
 import trimStart = require('lodash/trimStart');
 
-import {Command, normalizeCommand, NormalizedCommand} from './command';
+import { Command, normalizeCommand, NormalizedCommand } from './command';
 import {
   MenuPos,
   processInputForSuggestions,
@@ -13,7 +13,7 @@ import {
 const DELIMETER = ' ';
 const WHITESPACE = /\s+/;
 
-export interface Suggestions {
+export interface Options {
   commands: Command[];
   prefix: string;
 }
@@ -25,8 +25,9 @@ interface Input {
 }
 
 export interface CLI {
-  onTextChanged: (text: string) => Promise<Suggestion[]>;
-  onTextEntered: (text: string) => void | Error;
+  hasPrefix: (text: string) => boolean;
+  onInputChanged: (text: string) => Promise<Suggestion[]>;
+  onInputEntered: (text: string) => void | Error;
   defaultSuggestion: string;
 }
 
@@ -36,13 +37,17 @@ class OmniCLI implements CLI {
   private prefix = '';
   private commands = new Map<string, NormalizedCommand>();
 
-  constructor({commands, prefix}: Suggestions) {
+  constructor({ commands, prefix }: Options) {
     this.prefix = prefix;
 
     this.processCommands(commands);
   }
 
-  public onTextEntered = (text: string): Error | void => {
+  public hasPrefix(text: string): boolean {
+    return text.startsWith(this.prefix);
+  }
+
+  public onInputEntered = (text: string): Error | void => {
     if (!this.hasPrefix(text)) {
       return new Error(
         `the given input does not match the prefix \'${this.prefix}\'`,
@@ -54,12 +59,12 @@ class OmniCLI implements CLI {
       return new Error('no command matched for the given input');
     }
 
-    const {command: {action}, args} = input;
+    const { command: { action }, args } = input;
 
     return action(args);
   };
 
-  public onTextChanged = (text: string): Promise<Suggestion[]> => {
+  public onInputChanged = (text: string): Promise<Suggestion[]> => {
     return new Promise(resolve => {
       if (!this.hasPrefix(text)) {
         resolve([]);
@@ -68,12 +73,12 @@ class OmniCLI implements CLI {
       const input = this.processInput(text);
       let suggestions: Suggestion[] = [];
       if (input.command) {
-        const {command, args} = input;
+        const { command, args } = input;
         if (command.getSuggestions) {
           command.getSuggestions(args).then(opts => {
             resolve(
               processSuggestions(
-                opts.map(({content, ...opt}) => ({
+                opts.map(({ content, ...opt }) => ({
                   content: `${command.name} ${content}`,
                   ...opt,
                 })),
@@ -106,7 +111,7 @@ class OmniCLI implements CLI {
             content: this.toCommand(command),
             description: `${command.name}${
               command.description ? ` - ${command.description}` : ''
-            }`,
+              }`,
           });
         }
       }
@@ -133,12 +138,12 @@ class OmniCLI implements CLI {
     }
 
     this.defaultSuggestion = `Enter a command: ${commands
-      .map(({name}) => name)
+      .map(({ name }) => name)
       .join(', ')}`;
   }
 
   private processInput(raw: string): Input {
-    const {text, pos} = processInputForSuggestions(raw);
+    const { text, pos } = processInputForSuggestions(raw);
 
     const [root, ...args] = trimStart(text, this.prefix)
       .trim()
@@ -146,7 +151,7 @@ class OmniCLI implements CLI {
 
     const rootCmd = this.commands.get(root);
     if (!rootCmd) {
-      return {args: [root, ...args], pos};
+      return { args: [root, ...args], pos };
     }
 
     const depth = rootCmd.depth;
@@ -183,10 +188,6 @@ class OmniCLI implements CLI {
     };
   }
 
-  private hasPrefix(text: string): boolean {
-    return text.startsWith(this.prefix);
-  }
-
   private toCommand(command: NormalizedCommand, args: string[] = []): string {
     return `${this.prefix}${command.name} ${args.join(DELIMETER)}`;
   }
@@ -206,17 +207,17 @@ class OmniCLI implements CLI {
       content: this.toCommand(command),
       description: `${command.name}${
         command.description ? ` - ${command.description}` : ''
-      }`,
+        }`,
     };
   }
 
-  private handleEntered({command, args}: Input): void {
+  private handleEntered({ command, args }: Input): void {
     command.action(args);
   }
 }
 
-export function createCli(suggestions: Partial<Suggestions>): CLI {
-  const {commands, ...rest} = suggestions;
+export function createCli(options: Partial<Options>): CLI {
+  const { commands, ...rest } = options;
   if (!commands) {
     throw new Error('suggestions.commands is required');
   }
