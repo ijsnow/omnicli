@@ -1,5 +1,5 @@
 // tslint:disable:no-console
-import { Command, createCli, Suggestion } from '../src';
+import {Command, createCli, Suggestion} from '../src';
 
 function helloAction(args: string[]): null {
   console.log(`Hello, ${args.join()}!`);
@@ -51,7 +51,6 @@ function listAction(args: string[]): void {
 
 function getListSuggestions(args: string[]): Promise<Suggestion[]> {
   return new Promise(resolve => {
-    console.log('getting suggestions');
     const suggestions: Suggestion[] = [];
 
     for (let i = 0; i < 30; i++) {
@@ -60,8 +59,6 @@ function getListSuggestions(args: string[]): Promise<Suggestion[]> {
         description: `Pick item ${i}`,
       });
     }
-
-    console.log('suggestions', suggestions);
 
     resolve(suggestions);
   });
@@ -76,14 +73,14 @@ const listCommand: Command = {
 
 const commands: Command[] = [humanCommand, listCommand];
 
-const cli = createCli({ commands });
+const cli = createCli({commands, prefix: ':'});
 
-browser.omnibox.setDefaultSuggestion({ description: cli.defaultSuggestion });
+browser.omnibox.setDefaultSuggestion({description: cli.defaultSuggestion});
 
-browser.omnibox.onInputChanged.addListener((text, suggest) =>
+browser.omnibox.onInputChanged.addListener((text, suggest) => {
   cli.onInputChanged(text).then(opts => {
     suggest(opts);
-  }),
-);
+  });
+});
 
 browser.omnibox.onInputEntered.addListener(cli.onInputEntered);
