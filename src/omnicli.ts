@@ -10,6 +10,7 @@ import {
   Suggestion,
 } from './suggestion';
 
+export const DEFAULT_NAME = '<default>';
 const DELIMETER = ' ';
 const WHITESPACE = /\s+/;
 
@@ -79,7 +80,6 @@ class OmniCLI implements CLI {
             resolve(
               processSuggestions(
                 opts.map(({content, ...opt}) => ({
-                  // content: `${this.prefix}${command.name} ${content}`,
                   content: this.toCommand(command.name, [content]),
                   ...opt,
                 })),
@@ -150,7 +150,11 @@ class OmniCLI implements CLI {
       .trim()
       .split(WHITESPACE);
 
-    const rootCmd = this.commands.get(root);
+    let rootCmd = this.commands.get(root);
+    if (!rootCmd && this.hasDefault()) {
+      rootCmd = this.commands.get(DEFAULT_NAME);
+    }
+
     if (!rootCmd) {
       return {args: [root, ...args], pos};
     }
@@ -207,6 +211,10 @@ class OmniCLI implements CLI {
 
   private handleEntered({command, args}: Input): void {
     command.action(args);
+  }
+
+  private hasDefault(): boolean {
+    return this.commands.has(DEFAULT_NAME);
   }
 }
 
