@@ -48,7 +48,10 @@ class OmniCLI implements CLI {
     return text.startsWith(this.prefix);
   }
 
-  public onInputEntered = (text: string): Error | void => {
+  public onInputEntered = (
+    text: string,
+    disposition?: string,
+  ): Error | void => {
     if (!this.hasPrefix(text)) {
       return new Error(
         `the given input does not match the prefix \'${this.prefix}\'`,
@@ -62,7 +65,7 @@ class OmniCLI implements CLI {
 
     const {command: {action}, args} = input;
 
-    return action(args);
+    return action(args, disposition);
   };
 
   public onInputChanged = (text: string): Promise<Suggestion[]> => {

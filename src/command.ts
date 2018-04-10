@@ -1,4 +1,4 @@
-import { Suggestion } from './suggestion';
+import {Suggestion} from './suggestion';
 
 export interface Command {
   name: string;
@@ -8,7 +8,7 @@ export interface Command {
    * action is the handler for this command. It gets called when a command is submitted that matches
    * this commands name or alias.
    */
-  action?: (args: string[]) => Error | void;
+  action?: (args: string[], disposition?: string) => Error | void;
   commands?: Command[];
   /**
    * getSuggestions gets called when text changed
@@ -17,7 +17,7 @@ export interface Command {
 }
 
 export interface NormalizedCommand extends Command {
-  action: (args: string[]) => void;
+  action: (args: string[], disposition?: string) => void;
   commands: Command[];
   depth: number;
   getSuggestions?: (args: string[]) => Promise<Suggestion[]>;
@@ -54,7 +54,7 @@ function wrapGetSuggestions(
 }
 
 export function normalizeCommand(command: Command): NormalizedCommand {
-  const { getSuggestions, ...rest } = command;
+  const {getSuggestions, ...rest} = command;
 
   const nCommand: NormalizedCommand = {
     ...rest,
