@@ -35,7 +35,7 @@ const directions: DirectionalMap = {
   down: Direction.Forward,
 };
 
-const axisMap: { [key: string]: 'x' | 'y' } = {
+const axisMap: {[key: string]: 'x' | 'y'} = {
   h: 'x',
   j: 'y',
   k: 'y',
@@ -57,14 +57,14 @@ const directionMap: DirectionalMap = {
   p: directions.up,
 };
 
-const DIRECTION_REGEX = /\[[A-Za-z]+\]?/gi;
+const DIRECTION_REGEX = /\[[A-Za-z]*\]?/gi;
 
 const getDirections = (raw: string) => trim(raw, '[|]');
 const getDelta = (char: string) => directionMap[char] || 0;
 
 export function processInputForSuggestions(
   raw: string,
-): { pos: MenuPos; text: string } {
+): {pos: MenuPos; text: string} {
   const pos: MenuPos = {
     x: 0,
     y: 0,
@@ -90,10 +90,13 @@ export function processInputForSuggestions(
     text = text.replace(DIRECTION_REGEX, ' ');
   }
 
-  return { pos, text };
+  return {pos, text};
 }
 
-export function processSuggestions(suggestions: Suggestion[], pos: MenuPos): Suggestion[] {
+export function processSuggestions(
+  suggestions: Suggestion[],
+  pos: MenuPos,
+): Suggestion[] {
   const yPos = pos.y % suggestions.length;
 
   const front = suggestions.slice(0, yPos);
