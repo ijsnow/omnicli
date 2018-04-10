@@ -53,14 +53,14 @@ class OmniCLI implements CLI {
     disposition?: string,
   ): Error | void => {
     if (!this.hasPrefix(text)) {
-      return new Error(
+      throw new Error(
         `the given input does not match the prefix \'${this.prefix}\'`,
       );
     }
 
     const input = this.processInput(text);
     if (!input.command) {
-      return new Error('no command matched for the given input');
+      throw new Error('no command matched for the given input');
     }
 
     const {command: {action}, args} = input;
@@ -76,7 +76,7 @@ class OmniCLI implements CLI {
 
       const input = this.processInput(text);
       let suggestions: Suggestion[] = [];
-      if (input.command) {
+      if (input.command && input.command.name !== DEFAULT_NAME) {
         const {command, args} = input;
         if (command.getSuggestions) {
           command.getSuggestions(args).then(opts => {
@@ -103,20 +103,20 @@ class OmniCLI implements CLI {
           }
         }
       } else {
-        suggestions = [
-          {
-            content: '',
-            description: 'Enter a command',
-          },
-        ];
-
         for (const command of this.commands.values()) {
-          suggestions.push({
-            content: this.toCommand(command.name),
-            description: `${command.name}${
-              command.description ? ` - ${command.description}` : ''
-            }`,
-          });
+          if (command.name === DEFAULT_NAME && command.description) {
+            suggestions.push({
+              content: this.toCommand(''),
+              description: command.description,
+            });
+          } else if (command.name !== DEFAULT_NAME) {
+            suggestions.push({
+              content: this.toCommand(command.name),
+              description: `${command.name}${
+                command.description ? ` - ${command.description}` : ''
+              }`,
+            });
+          }
         }
       }
 
@@ -153,9 +153,12 @@ class OmniCLI implements CLI {
       .trim()
       .split(WHITESPACE);
 
-    let rootCmd = this.commands.get(root);
+    const rootCmd = this.commands.get(root);
     if (!rootCmd && this.hasDefault()) {
-      rootCmd = this.commands.get(DEFAULT_NAME);
+      const defaultCommand = this.commands.get(DEFAULT_NAME);
+      if (defaultCommand) {
+        return {args: [root, ...args], pos, command: defaultCommand};
+      }
     }
 
     if (!rootCmd) {
@@ -173,21 +176,24 @@ class OmniCLI implements CLI {
 
     const command = take(args, depth - 1)
       .map((sub, idx) => [root, ...take(args, idx === 0 ? 0 : idx), sub])
-      .reduce((memo, cmd) => {
-        const maybeMatch = cmd.join(DELIMETER);
-        const sub = this.commands.get(maybeMatch);
-        if (sub) {
-          return {
-            ...sub,
-            depth: cmd.length,
-            name: maybeMatch,
-          };
-        }
+      .reduce(
+        (memo, cmd) => {
+          const maybeMatch = cmd.join(DELIMETER);
+          const sub = this.commands.get(maybeMatch);
+          if (sub) {
+            return {
+              ...sub,
+              depth: cmd.length,
+              name: maybeMatch,
+            };
+          }
 
-        return memo;
-      }, rootCmd);
+          return memo;
+        },
+        {...rootCmd, depth: 1},
+      );
 
-    const subArgs = args.slice(command.depth - 1);
+    const subArgs = [root, ...args].slice(command.depth);
 
     return {
       args: subArgs,
