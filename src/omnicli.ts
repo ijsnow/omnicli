@@ -28,7 +28,7 @@ interface Input {
 export interface CLI {
   hasPrefix: (text: string) => boolean;
   onInputChanged: (text: string) => Promise<Suggestion[]>;
-  onInputEntered: (text: string) => void | Error;
+  onInputEntered: (text: string, disposition?: string) => void | Error;
   defaultSuggestion: string;
 }
 
