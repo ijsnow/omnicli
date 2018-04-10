@@ -11,12 +11,14 @@ import {
 } from './suggestion';
 
 export const DEFAULT_NAME = '<default>';
+const DEFAULT_THRESHOLD = 5;
 const DELIMETER = ' ';
 const WHITESPACE = /\s+/;
 
 export interface Options {
   commands: Command[];
   prefix: string;
+  defaultThreshold: number;
 }
 
 interface Input {
@@ -36,10 +38,12 @@ class OmniCLI implements CLI {
   public defaultSuggestion = '';
 
   private prefix = '';
+  private defaultThreshold = DEFAULT_THRESHOLD;
   private commands = new Map<string, NormalizedCommand>();
 
-  constructor({commands, prefix}: Options) {
+  constructor({commands, prefix, defaultThreshold}: Options) {
     this.prefix = prefix;
+    this.defaultThreshold = defaultThreshold;
 
     this.processCommands(commands);
   }
@@ -76,7 +80,14 @@ class OmniCLI implements CLI {
 
       const input = this.processInput(text);
       let suggestions: Suggestion[] = [];
-      if (input.command && input.command.name !== DEFAULT_NAME) {
+      if (
+        input.command &&
+        !(
+          (input.command.name === DEFAULT_NAME &&
+            !input.command.getSuggestions) ||
+          text.length < this.defaultThreshold
+        )
+      ) {
         const {command, args} = input;
         if (command.getSuggestions) {
           command.getSuggestions(args).then(opts => {
@@ -203,6 +214,10 @@ class OmniCLI implements CLI {
   }
 
   private toCommand(name: string, args: string[] = []): string {
+    if (name === DEFAULT_NAME) {
+      return `${this.prefix}${args.join(DELIMETER)}`;
+    }
+
     return `${this.prefix}${name} ${args.join(DELIMETER)}`;
   }
 
@@ -236,6 +251,7 @@ export function createCli(options: Partial<Options>): CLI {
   return new OmniCLI({
     prefix: '',
     commands,
+    defaultThreshold: DEFAULT_THRESHOLD,
     ...rest,
   });
 }

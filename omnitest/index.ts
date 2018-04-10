@@ -1,12 +1,6 @@
 // tslint:disable:no-console
 import {Command, createCli, DEFAULT_NAME, Suggestion} from '../src';
 
-const defaultCommand: Command = {
-  name: DEFAULT_NAME,
-  description: 'Just log stuff',
-  action: (args: string[]) => console.log('default', args.join(' ')),
-};
-
 function helloAction(args: string[]): null {
   console.log(`Hello, ${args.join(' ')}!`);
 
@@ -74,6 +68,13 @@ const listCommand: Command = {
   name: 'list',
   alias: ['ls'],
   action: listAction,
+  getSuggestions: getListSuggestions,
+};
+
+const defaultCommand: Command = {
+  name: DEFAULT_NAME,
+  description: 'Just log stuff',
+  action: (args: string[]) => console.log('default', args.join(' ')),
   getSuggestions: getListSuggestions,
 };
 
