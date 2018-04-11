@@ -96,3 +96,5 @@ browser.omnibox.onInputChanged.addListener((text, suggest) => {
 });
 
 browser.omnibox.onInputEntered.addListener(cli.onInputEntered);
+browser.omnibox.onInputStarted.addListener(cli.onInputStarted);
+browser.omnibox.onInputCancelled.addListener(cli.onInputCancelled);

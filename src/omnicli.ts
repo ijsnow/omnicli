@@ -3,12 +3,8 @@ import take = require('lodash/take');
 import trimStart = require('lodash/trimStart');
 
 import {Command, normalizeCommand, NormalizedCommand} from './command';
-import {
-  MenuPos,
-  processInputForSuggestions,
-  processSuggestions,
-  Suggestion,
-} from './suggestion';
+import {Suggestion} from './suggestion';
+import * as Vim from './vim';
 
 export const DEFAULT_NAME = '<default>';
 const DEFAULT_THRESHOLD = 5;
@@ -24,13 +20,14 @@ export interface Options {
 interface Input {
   args: string[];
   command?: NormalizedCommand;
-  pos: MenuPos;
 }
 
 export interface CLI {
   hasPrefix: (text: string) => boolean;
   onInputChanged: (text: string) => Promise<Suggestion[]>;
   onInputEntered: (text: string, disposition?: string) => void | Error;
+  onInputCancelled: () => void;
+  onInputStarted: () => void;
   defaultSuggestion: string;
 }
 
@@ -40,6 +37,7 @@ class OmniCLI implements CLI {
   private prefix = '';
   private defaultThreshold = DEFAULT_THRESHOLD;
   private commands = new Map<string, NormalizedCommand>();
+  private vimState = Vim.createState();
 
   constructor({commands, prefix, defaultThreshold}: Options) {
     this.prefix = prefix;
@@ -52,14 +50,21 @@ class OmniCLI implements CLI {
     return text.startsWith(this.prefix);
   }
 
-  public onInputEntered = (
-    text: string,
-    disposition?: string,
-  ): Error | void => {
-    if (!this.hasPrefix(text)) {
+  public onInputStarted = () => this.reset();
+  public onInputCancelled = () => this.reset();
+
+  public onInputEntered = (raw: string, disposition?: string): Error | void => {
+    if (!this.hasPrefix(raw)) {
       throw new Error(
         `the given input does not match the prefix \'${this.prefix}\'`,
       );
+    }
+
+    let text = raw;
+
+    const {isVimMode, selected} = this.vimState;
+    if (isVimMode && selected) {
+      text = selected;
     }
 
     const input = this.processInput(text);
@@ -68,6 +73,8 @@ class OmniCLI implements CLI {
     }
 
     const {command: {action}, args} = input;
+
+    this.reset();
 
     return action(args, disposition);
   };
@@ -91,15 +98,17 @@ class OmniCLI implements CLI {
         const {command, args} = input;
         if (command.getSuggestions) {
           command.getSuggestions(args).then(opts => {
-            resolve(
-              processSuggestions(
-                opts.map(({content, ...opt}) => ({
-                  content: this.toCommand(command.name, [content]),
-                  ...opt,
-                })),
-                input.pos,
-              ),
+            const res = Vim.exec(
+              opts.map(({content, ...opt}) => ({
+                content: this.toCommand(command.name, [content]),
+                ...opt,
+              })),
+              this.vimState,
             );
+
+            this.vimState = res.state;
+
+            resolve(res.suggestions);
           });
           return;
         } else {
@@ -131,7 +140,11 @@ class OmniCLI implements CLI {
         }
       }
 
-      resolve(processSuggestions(suggestions, input.pos));
+      const vimRes = Vim.exec(suggestions, this.vimState);
+
+      this.vimState = vimRes.state;
+
+      resolve(vimRes.suggestions);
     });
   };
 
@@ -158,7 +171,9 @@ class OmniCLI implements CLI {
   }
 
   private processInput(raw: string): Input {
-    const {text, pos} = processInputForSuggestions(raw);
+    this.vimState = Vim.parse(raw, this.vimState);
+
+    const {text, pos} = this.vimState;
 
     const [root, ...args] = trimStart(text, this.prefix)
       .trim()
@@ -168,12 +183,15 @@ class OmniCLI implements CLI {
     if (!rootCmd && this.hasDefault()) {
       const defaultCommand = this.commands.get(DEFAULT_NAME);
       if (defaultCommand) {
-        return {args: [root, ...args], pos, command: defaultCommand};
+        return {
+          args: [root, ...args],
+          command: defaultCommand,
+        };
       }
     }
 
     if (!rootCmd) {
-      return {args: [root, ...args], pos};
+      return {args: [root, ...args]};
     }
 
     const depth = rootCmd.depth;
@@ -181,7 +199,6 @@ class OmniCLI implements CLI {
       return {
         args,
         command: rootCmd,
-        pos,
       };
     }
 
@@ -209,7 +226,6 @@ class OmniCLI implements CLI {
     return {
       args: subArgs,
       command,
-      pos,
     };
   }
 
@@ -240,6 +256,10 @@ class OmniCLI implements CLI {
   private hasDefault(): boolean {
     return this.commands.has(DEFAULT_NAME);
   }
+
+  private reset = () => {
+    this.vimState = Vim.createState();
+  };
 }
 
 export function createCli(options: Partial<Options>): CLI {
