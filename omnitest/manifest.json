@@ -9,6 +9,6 @@
     "scripts": ["omnitest.js"]
   },
   "omnibox": {
-    "keyword": "ot"
+    "keyword": "test"
   }
 }

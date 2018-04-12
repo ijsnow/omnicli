@@ -20,9 +20,7 @@ is matched with an input before it is submitted.
 The `omnibox` API only displays the first 6 items passed to it's `suggest` function.
 Because of this, we need a way to simulate scrolling through a list of suggestions.
 
-To scroll up and down in the list, type `[` any where in the prompt to enter "scroll mode"
-and then use `j` to scroll down and use `k` to scroll up. To exit "scroll mode",
-close if off with a `]`.
+See more info on how to use vim mode [here](./docs/vim.md).
 
 ## Getting Started
 

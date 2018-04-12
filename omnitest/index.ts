@@ -85,7 +85,7 @@ const commands: Command[] = [
   listCommand,
 ];
 
-const cli = createCli({commands, prefix: ':'});
+const cli = createCli({commands});
 
 browser.omnibox.setDefaultSuggestion({description: cli.defaultSuggestion});
 
