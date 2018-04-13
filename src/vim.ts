@@ -1,6 +1,6 @@
-import has = require('lodash/has');
-import identity = require('lodash/identity');
-import trim = require('lodash/trim');
+import has = require("lodash/has");
+import identity = require("lodash/identity");
+import trim = require("lodash/trim");
 
 /**
  * Suggestion represents the objects in a cli suggestion list.
@@ -17,9 +17,9 @@ export interface Suggestion {
   description: string;
 }
 
-const UP_ARROW = '↑';
-const DOWN_ARROW = '↓';
-const ENTER_ARRAY = '↳';
+const UP_ARROW = "↑";
+const DOWN_ARROW = "↓";
+const ENTER_ARRAY = "↳";
 
 interface DirectionalMap {
   [key: string]: number;
@@ -27,7 +27,7 @@ interface DirectionalMap {
 
 enum Direction {
   Forward = 1,
-  Backward = -1,
+  Backward = -1
 }
 
 export interface MenuPos {
@@ -48,13 +48,15 @@ export interface VimSuggestion extends Suggestion {
 }
 
 export interface KeyMap {
-  keyToIndex: {[key: string]: number};
-  indexToKey: {[key: number]: string};
+  keyToIndex: { [key: string]: number };
+  indexToKey: { [key: number]: string };
 }
 
 export interface State {
   text: string;
   pos: MenuPos;
+
+  head: Node | null;
 
   // selected is the current value if in vim mode
   selected: string;
@@ -67,12 +69,13 @@ export interface State {
 
 export function createState(): State {
   return {
-    text: '',
-    pos: {x: 0, y: 0},
+    text: "",
+    pos: { x: 0, y: 0 },
     suggestions: [],
     keyMap: null,
-    selected: '',
+    selected: "",
     isVimMode: false,
+    head: null
   };
 }
 
@@ -80,20 +83,20 @@ const directions: DirectionalMap = {
   left: Direction.Backward,
   right: Direction.Forward,
   up: Direction.Backward,
-  down: Direction.Forward,
+  down: Direction.Forward
 };
 
-const axisMap: {[key: string]: 'x' | 'y'} = {
-  h: 'x',
-  j: 'y',
-  k: 'y',
-  l: 'x',
+const axisMap: { [key: string]: "x" | "y" } = {
+  h: "x",
+  j: "y",
+  k: "y",
+  l: "x",
 
-  n: 'y',
-  p: 'y',
+  n: "y",
+  p: "y",
 
-  f: 'y',
-  b: 'y',
+  f: "y",
+  b: "y"
 };
 
 const directionMap: DirectionalMap = {
@@ -108,12 +111,12 @@ const directionMap: DirectionalMap = {
   p: directions.up,
 
   f: directions.down * 5,
-  b: directions.up * 5,
+  b: directions.up * 5
 };
 
 const DIRECTION_REGEX = /\[[A-Za-z0-9]*\]?/gi;
 
-const getDirections = (raw: string) => trim(raw, '[|]');
+const getDirections = (raw: string) => trim(raw, "[|]");
 const getDelta = (char: string) => directionMap[char] || 0;
 
 const isNumeric = (chars: string) => !isNaN(Number(chars));
@@ -123,20 +126,20 @@ const charInfo = {
   upper: 123,
   range: 123 - 97,
   reserved: {
-    ['h'.charCodeAt(0)]: true,
-    ['j'.charCodeAt(0)]: true,
-    ['k'.charCodeAt(0)]: true,
-    ['l'.charCodeAt(0)]: true,
-    ['n'.charCodeAt(0)]: true,
-    ['p'.charCodeAt(0)]: true,
-    ['f'.charCodeAt(0)]: true,
-    ['b'.charCodeAt(0)]: true,
-  },
+    ["h".charCodeAt(0)]: true,
+    ["j".charCodeAt(0)]: true,
+    ["k".charCodeAt(0)]: true,
+    ["l".charCodeAt(0)]: true,
+    ["n".charCodeAt(0)]: true,
+    ["p".charCodeAt(0)]: true,
+    ["f".charCodeAt(0)]: true,
+    ["b".charCodeAt(0)]: true
+  }
 };
 
-function generateKeyMap(length: number): KeyMap {
-  const keyToIndex: {[key: string]: number} = {};
-  const indexToKey: {[key: number]: string} = {};
+export function generateKeyMap(length: number): KeyMap {
+  const keyToIndex: { [key: string]: number } = {};
+  const indexToKey: { [key: number]: string } = {};
 
   let offset = 0;
   let leaderOffset = 0;
@@ -176,7 +179,7 @@ function generateKeyMap(length: number): KeyMap {
     indexToKey[idx] = key;
   }
 
-  return {keyToIndex, indexToKey};
+  return { keyToIndex, indexToKey };
 }
 
 export interface VimContext {
@@ -185,14 +188,14 @@ export interface VimContext {
 
 export function createContext(size: number): VimContext {
   return {
-    keyMap: generateKeyMap(size),
+    keyMap: generateKeyMap(size)
   };
 }
 
 export enum NodeType {
   Directional,
   KeyMap,
-  Multiplier,
+  Multiplier
 }
 
 export interface Node {
@@ -208,7 +211,7 @@ function isNodeType(test: NodeType, target: NodeType): boolean {
 }
 
 export function parseKeyMapNode(text: string, ctx: VimContext): Node {
-  const {keyMap: {keyToIndex}} = ctx;
+  const { keyMap: { keyToIndex } } = ctx;
 
   let key = text.charAt(0);
   let idx = 0;
@@ -227,7 +230,7 @@ export function parseKeyMapNode(text: string, ctx: VimContext): Node {
     key,
     delta: keyToIndex[key],
     next: parseNodes(text.slice(1), ctx),
-    type: NodeType.KeyMap,
+    type: NodeType.KeyMap
   };
 }
 
@@ -240,7 +243,7 @@ export function parseDirectionalNode(text: string, ctx: VimContext): Node {
     key,
     delta,
     next: parseNodes(text.slice(1), ctx),
-    type: NodeType.Directional,
+    type: NodeType.Directional
   };
 }
 
@@ -266,7 +269,7 @@ export function parseNumberNode(text: string, ctx: VimContext): Node {
     key: num,
     delta: 0,
     next,
-    type: NodeType.Multiplier,
+    type: NodeType.Multiplier
   };
 }
 
@@ -311,7 +314,7 @@ export function calculateDelta(head: Node): number {
 export function parse(raw: string, state: State): State {
   const pos: MenuPos = {
     x: 0,
-    y: 0,
+    y: 0
   };
 
   let text = raw;
@@ -327,14 +330,14 @@ export function parse(raw: string, state: State): State {
     }
 
     // Replace the directionals with an empty string
-    text = text.replace(DIRECTION_REGEX, '').trim();
+    text = text.replace(DIRECTION_REGEX, "").trim();
   }
 
   return {
     ...state,
     pos,
     text,
-    isVimMode: !!matches,
+    isVimMode: !!matches
   };
 }
 
@@ -343,14 +346,14 @@ export function parse(raw: string, state: State): State {
  */
 export function exec(
   suggestions: Suggestion[],
-  state: State,
-): {suggestions: Suggestion[]; state: State} {
-  const {pos, isVimMode} = state;
+  state: State
+): { suggestions: Suggestion[]; state: State } {
+  const { pos, isVimMode } = state;
   let keyMap: KeyMap | null = state.keyMap || null;
 
   let vimSuggestions: VimSuggestion[] = suggestions.map(s => ({
     ...s,
-    key: '',
+    key: ""
   }));
   let selected = vimSuggestions[0].content;
 
@@ -359,7 +362,7 @@ export function exec(
       keyMap = generateKeyMap(suggestions.length);
     }
 
-    const {indexToKey} = keyMap;
+    const { indexToKey } = keyMap;
     const yPos = pos.y % vimSuggestions.length;
 
     vimSuggestions = vimSuggestions.map((suggestion, idx) => {
@@ -374,7 +377,7 @@ export function exec(
       return {
         key: indexToKey[idx],
         content: suggestion.content,
-        description,
+        description
       };
     });
 
@@ -392,7 +395,7 @@ export function exec(
       ...state,
       selected,
       suggestions: vimSuggestions,
-      keyMap,
-    },
+      keyMap
+    }
   };
 }

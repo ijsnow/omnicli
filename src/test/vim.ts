@@ -1,6 +1,7 @@
 import {
   calculateDelta,
   createContext,
+  generateKeyMap,
   parseDirectionalNode,
   parseKeyMapNode,
   parseNodes,
@@ -214,6 +215,37 @@ describe('parseNodes', () => {
       const delta = calculateDelta(node);
 
       expect(delta).toBe(expectedDelta);
+    }
+  });
+});
+
+describe('generateKeyMap', () => {
+  it('can generate a key map', () => {
+    const {keyToIndex} = generateKeyMap(150);
+    const keys = ['a', 'c', 'aa'];
+
+    for (const key of keys) {
+      expect(keyToIndex[key]).not.toBe(undefined);
+    }
+  });
+
+  // This test only passes up to 485. If we add more navigation keys this will change.
+  // This is flakey but will probably be sufficient because why would you want to
+  // scroll through a list of more than 485 items in a list.
+  //
+  // If we want more, we'll have to modify the logic to be able to make keys of `n`
+  // length. Right now, it only works up to 2.
+  it('can generate a large key map and nothing gets over written', () => {
+    const size = 485;
+    const {indexToKey} = generateKeyMap(size);
+    const visited: {[key: string]: boolean} = {};
+
+    for (let i = 0; i < size; i++) {
+      const key = indexToKey[i];
+
+      expect(visited[key]).toBe(undefined);
+
+      visited[key] = true;
     }
   });
 });
