@@ -2,7 +2,20 @@ import has = require('lodash/has');
 import identity = require('lodash/identity');
 import trim = require('lodash/trim');
 
-import {Suggestion} from './suggestion';
+/**
+ * Suggestion represents the objects in a cli suggestion list.
+ * This interface implements [`browser.omnibox.SuggestResult`](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/omnibox/SuggestResult).
+ */
+export interface Suggestion {
+  /**
+   * content is the value that will be displayed when this item is selected.
+   */
+  content: string;
+  /**
+   * description is the value that will be displayed in the list.
+   */
+  description: string;
+}
 
 const UP_ARROW = '↑';
 const DOWN_ARROW = '↓';
@@ -34,7 +47,7 @@ export interface VimSuggestion extends Suggestion {
   key: string;
 }
 
-interface CharMap {
+export interface KeyMap {
   keyToIndex: {[key: string]: number};
   indexToKey: {[key: number]: string};
 }
@@ -47,7 +60,7 @@ export interface State {
   selected: string;
 
   suggestions: Suggestion[];
-  charMap: CharMap | null;
+  keyMap: KeyMap | null;
 
   isVimMode: boolean;
 }
@@ -57,7 +70,7 @@ export function createState(): State {
     text: '',
     pos: {x: 0, y: 0},
     suggestions: [],
-    charMap: null,
+    keyMap: null,
     selected: '',
     isVimMode: false,
   };
@@ -121,7 +134,7 @@ const charInfo = {
   },
 };
 
-function generateCharMap(length: number): CharMap {
+function generateKeyMap(length: number): KeyMap {
   const keyToIndex: {[key: string]: number} = {};
   const indexToKey: {[key: number]: string} = {};
 
@@ -166,6 +179,131 @@ function generateCharMap(length: number): CharMap {
   return {keyToIndex, indexToKey};
 }
 
+export interface VimContext {
+  keyMap: KeyMap;
+}
+
+export function createContext(size: number): VimContext {
+  return {
+    keyMap: generateKeyMap(size),
+  };
+}
+
+export enum NodeType {
+  Directional,
+  KeyMap,
+  Multiplier,
+}
+
+export interface Node {
+  key: string;
+  delta: number;
+  type: NodeType;
+
+  next: Node | null;
+}
+
+function isNodeType(test: NodeType, target: NodeType): boolean {
+  return identity(test) === identity(target);
+}
+
+export function parseKeyMapNode(text: string, ctx: VimContext): Node {
+  const {keyMap: {keyToIndex}} = ctx;
+
+  let key = text.charAt(0);
+  let idx = 0;
+
+  while (
+    idx < text.length &&
+    !isNumeric(key) &&
+    !directionMap[key] &&
+    keyToIndex[key]
+  ) {
+    idx++;
+    key += text.charAt(idx);
+  }
+
+  return {
+    key,
+    delta: keyToIndex[key],
+    next: parseNodes(text.slice(1), ctx),
+    type: NodeType.KeyMap,
+  };
+}
+
+export function parseDirectionalNode(text: string, ctx: VimContext): Node {
+  const key = text.charAt(0);
+
+  const delta = getDelta(key);
+
+  return {
+    key,
+    delta,
+    next: parseNodes(text.slice(1), ctx),
+    type: NodeType.Directional,
+  };
+}
+
+export function parseNumberNode(text: string, ctx: VimContext): Node {
+  let num = text.charAt(0);
+
+  let idx = 0;
+
+  let multiplier = 1;
+
+  while (idx < text.length && isNumeric(num)) {
+    multiplier = parseInt(num, 10);
+    idx++;
+    num += text.charAt(idx);
+  }
+
+  const next = parseNodes(text.slice(idx), ctx);
+  if (next !== null && next.type !== NodeType.KeyMap) {
+    next.delta = next.delta * multiplier;
+  }
+
+  return {
+    key: num,
+    delta: 0,
+    next,
+    type: NodeType.Multiplier,
+  };
+}
+
+export function parseNodes(text: string, ctx: VimContext): Node | null {
+  if (text.length === 0) {
+    return null;
+  }
+
+  const direction = text.charAt(0);
+  if (isNumeric(direction)) {
+    return parseNumberNode(text, ctx);
+  }
+
+  if (!directionMap[direction]) {
+    return parseKeyMapNode(text, ctx);
+  }
+
+  return parseDirectionalNode(text, ctx);
+}
+
+export function calculateDelta(head: Node): number {
+  let node = head;
+
+  let delta = 0;
+  while (node !== null) {
+    if (node.type === NodeType.KeyMap) {
+      delta = node.delta;
+    } else {
+      delta += node.delta;
+    }
+
+    node = node.next;
+  }
+
+  return delta;
+}
+
 /**
  * parse looks for directionals in a given input and returns what the position of
  * the menu should be based on the directionals if present.
@@ -181,47 +319,14 @@ export function parse(raw: string, state: State): State {
   if (matches) {
     for (const match of matches) {
       const directionals = getDirections(match);
+      const ctx = createContext(state.suggestions.length);
 
-      for (let idx = 0; idx < directionals.length; idx++) {
-        let direction = directionals[idx];
+      const delta = calculateDelta(parseNodes(directionals, ctx));
 
-        let multiplier = 1;
-
-        let maybeNum = direction;
-        while (idx < directionals.length && isNumeric(maybeNum)) {
-          multiplier = parseInt(maybeNum, 10);
-          idx++;
-
-          direction = directionals.charAt(idx);
-          maybeNum += direction;
-        }
-
-        const delta = getDelta(direction);
-        const key = axisMap[direction];
-
-        if (key) {
-          pos[key] += delta * multiplier;
-          continue;
-        }
-
-        let charMapKey = '';
-        let char = direction;
-
-        while (idx < directionals.length && !axisMap[char]) {
-          charMapKey += char;
-          char = directionals.charAt(idx);
-
-          idx++;
-        }
-
-        const index = state.charMap.keyToIndex[charMapKey];
-        if (typeof index !== 'undefined') {
-          pos.y = index;
-        }
-      }
+      pos.y += delta;
     }
 
-    // Replace the directionals with a space.
+    // Replace the directionals with an empty string
     text = text.replace(DIRECTION_REGEX, '').trim();
   }
 
@@ -241,17 +346,20 @@ export function exec(
   state: State,
 ): {suggestions: Suggestion[]; state: State} {
   const {pos, isVimMode} = state;
-  let charMap: CharMap | null = state.charMap || null;
+  let keyMap: KeyMap | null = state.keyMap || null;
 
-  let vimSuggestions: VimSuggestion[] = suggestions.map(s => ({...s, key: ''}));
+  let vimSuggestions: VimSuggestion[] = suggestions.map(s => ({
+    ...s,
+    key: '',
+  }));
   let selected = vimSuggestions[0].content;
 
   if (isVimMode) {
-    if (!charMap) {
-      charMap = generateCharMap(suggestions.length);
+    if (!keyMap) {
+      keyMap = generateKeyMap(suggestions.length);
     }
 
-    const {indexToKey} = charMap;
+    const {indexToKey} = keyMap;
     const yPos = pos.y % vimSuggestions.length;
 
     vimSuggestions = vimSuggestions.map((suggestion, idx) => {
@@ -284,7 +392,7 @@ export function exec(
       ...state,
       selected,
       suggestions: vimSuggestions,
-      charMap,
+      keyMap,
     },
   };
 }

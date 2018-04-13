@@ -1,4 +1,4 @@
-import {Suggestion} from './suggestion';
+import { Suggestion } from "./vim";
 
 export interface Command {
   name: string;
@@ -40,7 +40,7 @@ function findCommandDepth(command: Command): number {
 }
 
 function wrapGetSuggestions(
-  fn: (args: string[]) => Promise<Suggestion[]> | Suggestion[],
+  fn: (args: string[]) => Promise<Suggestion[]> | Suggestion[]
 ): (args: string[]) => Promise<Suggestion[]> {
   return (args: string[]): Promise<Suggestion[]> => {
     const gettingSuggestions = fn(args);
@@ -54,13 +54,13 @@ function wrapGetSuggestions(
 }
 
 export function normalizeCommand(command: Command): NormalizedCommand {
-  const {getSuggestions, ...rest} = command;
+  const { getSuggestions, ...rest } = command;
 
   const nCommand: NormalizedCommand = {
     ...rest,
     action: command.action || noop,
     commands: command.commands || [],
-    depth: findCommandDepth(command),
+    depth: findCommandDepth(command)
   };
 
   if (getSuggestions) {
