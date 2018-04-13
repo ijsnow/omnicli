@@ -217,6 +217,27 @@ describe('parseNodes', () => {
       expect(delta).toBe(expectedDelta);
     }
   });
+
+  it(`ignores noop keys`, () => {
+    const attempts = [
+      {
+        input: 'z',
+        expectedDelta: 0,
+      },
+      {
+        input: 'jjkz',
+        expectedDelta: 1,
+      },
+    ];
+
+    for (const {input, expectedDelta} of attempts) {
+      const node = parseNodes(input, createContext(3));
+
+      const delta = calculateDelta(node);
+
+      expect(delta).toBe(expectedDelta);
+    }
+  });
 });
 
 describe('generateKeyMap', () => {
