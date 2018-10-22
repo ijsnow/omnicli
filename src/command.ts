@@ -1,4 +1,4 @@
-import { Suggestion } from "./vim";
+import {Suggestion} from './vim';
 
 export interface Command {
   name: string;
@@ -8,7 +8,10 @@ export interface Command {
    * action is the handler for this command. It gets called when a command is submitted that matches
    * this commands name or alias.
    */
-  action?: (args: string[], disposition?: string) => Error | void;
+  action?: (
+    args: string[],
+    disposition?: string,
+  ) => Error | void | Promise<void>;
   commands?: Command[];
   /**
    * getSuggestions gets called when text changed
@@ -40,7 +43,7 @@ function findCommandDepth(command: Command): number {
 }
 
 function wrapGetSuggestions(
-  fn: (args: string[]) => Promise<Suggestion[]> | Suggestion[]
+  fn: (args: string[]) => Promise<Suggestion[]> | Suggestion[],
 ): (args: string[]) => Promise<Suggestion[]> {
   return (args: string[]): Promise<Suggestion[]> => {
     const gettingSuggestions = fn(args);
@@ -54,13 +57,13 @@ function wrapGetSuggestions(
 }
 
 export function normalizeCommand(command: Command): NormalizedCommand {
-  const { getSuggestions, ...rest } = command;
+  const {getSuggestions, ...rest} = command;
 
   const nCommand: NormalizedCommand = {
     ...rest,
     action: command.action || noop,
     commands: command.commands || [],
-    depth: findCommandDepth(command)
+    depth: findCommandDepth(command),
   };
 
   if (getSuggestions) {

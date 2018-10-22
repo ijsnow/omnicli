@@ -74,6 +74,30 @@ describe('parseKeyMapNode', () => {
       );
     }
   });
+
+  it('can parse multiple keys', () => {
+    const suggestions = createSuggestions(20);
+    const ctx = createContext(20);
+
+    const keys = [
+      {
+        key: 'aa',
+        delta: ctx.keyMap.keyToIndex.aa,
+      },
+    ];
+
+    for (const {key, delta} of keys) {
+      const node = parseKeyMapNode(key, ctx);
+
+      expect(node).toEqual(
+        expect.objectContaining({
+          delta,
+          key,
+          next: null,
+        }),
+      );
+    }
+  });
 });
 
 describe('parseNumberNode', () => {
@@ -206,6 +230,10 @@ describe('parseNodes', () => {
       {
         input: 'b2',
         expectedDelta: -5,
+      },
+      {
+        input: 'b2j4k',
+        expectedDelta: -7,
       },
     ];
 

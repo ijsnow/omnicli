@@ -216,16 +216,20 @@ export function parseKeyMapNode(text: string, ctx: VimContext): Node {
   const {keyMap: {keyToIndex}} = ctx;
 
   let key = text.charAt(0);
+  let peek = key;
+
   let idx = 0;
 
   while (
     idx < text.length &&
-    !isNumeric(key) &&
-    !directionMap[key] &&
-    keyToIndex[key]
+    !isNumeric(peek) &&
+    !directionMap[peek] &&
+    typeof keyToIndex[peek] !== 'undefined'
   ) {
     idx++;
-    key += text.charAt(idx);
+
+    key = peek;
+    peek += text.charAt(idx);
   }
 
   let delta = keyToIndex[key];
@@ -236,7 +240,7 @@ export function parseKeyMapNode(text: string, ctx: VimContext): Node {
   return {
     key,
     delta,
-    next: parseNodes(text.slice(1), ctx),
+    next: parseNodes(text.slice(key.length), ctx),
     type: NodeType.KeyMap,
   };
 }
@@ -249,31 +253,35 @@ export function parseDirectionalNode(text: string, ctx: VimContext): Node {
   return {
     key,
     delta,
-    next: parseNodes(text.slice(1), ctx),
+    next: parseNodes(text.slice(key.length), ctx),
     type: NodeType.Directional,
   };
 }
 
 export function parseNumberNode(text: string, ctx: VimContext): Node {
-  let num = text.charAt(0);
+  let key = text.charAt(0);
+  let peek = key;
 
   let idx = 0;
 
   let multiplier = 1;
 
-  while (idx < text.length && isNumeric(num)) {
-    multiplier = parseInt(num, 10);
+  while (idx < text.length && isNumeric(peek)) {
+    key = peek;
+
+    multiplier = parseInt(key, 10);
     idx++;
-    num += text.charAt(idx);
+
+    peek += text.charAt(idx);
   }
 
-  const next = parseNodes(text.slice(idx), ctx);
+  const next = parseNodes(text.slice(key.length), ctx);
   if (next !== null && next.type !== NodeType.KeyMap) {
     next.delta = next.delta * multiplier;
   }
 
   return {
-    key: num,
+    key,
     delta: 0,
     next,
     type: NodeType.Multiplier,
@@ -290,11 +298,11 @@ export function parseNodes(text: string, ctx: VimContext): Node | null {
     return parseNumberNode(text, ctx);
   }
 
-  if (!directionMap[direction]) {
-    return parseKeyMapNode(text, ctx);
+  if (directionMap[direction]) {
+    return parseDirectionalNode(text, ctx);
   }
 
-  return parseDirectionalNode(text, ctx);
+  return parseKeyMapNode(text, ctx);
 }
 
 export function calculateDelta(head: Node): number {
