@@ -1,6 +1,6 @@
 {
   "name": "omnicli",
-  "version": "0.1.13",
+  "version": "0.2.0",
   "description": "CLI framework designed for use in the browser",
   "license": "MIT",
   "main": "dist/omnicli.js",
